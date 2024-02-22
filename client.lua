@@ -1,19 +1,18 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
 local Active = false
-local test = nil
-local test1 = nil
-local spam = true
+local doctorVeh = nil
+local doctorPed = nil
+local canCall = true
 
  
 
 
 RegisterCommand("help", function(source, args, raw)
-	if (QBCore.Functions.GetPlayerData().metadata["isdead"]) or (QBCore.Functions.GetPlayerData().metadata["inlaststand"]) and spam then
+	if (QBCore.Functions.GetPlayerData().metadata["isdead"]) or (QBCore.Functions.GetPlayerData().metadata["inlaststand"]) and canCall then
 		QBCore.Functions.TriggerCallback('hhfw:docOnline', function(EMSOnline, hasEnoughMoney)
-			if EMSOnline <= Config.Doctor and hasEnoughMoney and spam then
+			if EMSOnline <= Config.Doctor and hasEnoughMoney and canCall then
 				SpawnVehicle(GetEntityCoords(PlayerPedId()))
-				TriggerServerEvent('hhfw:charge')
 				Notify("Medic is arriving")
 			else
 				if EMSOnline > Config.Doctor then
@@ -33,7 +32,7 @@ end)
 
 
 function SpawnVehicle(x, y, z)  
-	spam = false
+	canCall = false
 	local vehhash = GetHashKey("ambulance")                                                     
 	local loc = GetEntityCoords(PlayerPedId())
 	RequestModel(vehhash)
@@ -65,8 +64,8 @@ function SpawnVehicle(x, y, z)
 		PlaySoundFrontend(-1, "Text_Arrive_Tone", "Phone_SoundSet_Default", 1)
 		Wait(2000)
 		TaskVehicleDriveToCoord(mechPed, mechVeh, loc.x, loc.y, loc.z, 20.0, 0, GetEntityModel(mechVeh), 524863, 2.0)
-		test = mechVeh
-		test1 = mechPed
+		doctorVeh = mechVeh
+		doctorPed = mechPed
 		Active = true
     end
 end
@@ -75,21 +74,31 @@ Citizen.CreateThread(function()
     while true do
       Citizen.Wait(200)
         if Active then
-            local loc = GetEntityCoords(GetPlayerPed(-1))
-			local lc = GetEntityCoords(test)
-			local ld = GetEntityCoords(test1)
-            local dist = Vdist(loc.x, loc.y, loc.z, lc.x, lc.y, lc.z)
-			local dist1 = Vdist(loc.x, loc.y, loc.z, ld.x, ld.y, ld.z)
-            if dist <= 10 then
-				if Active then
-					TaskGoToCoordAnyMeans(test1, loc.x, loc.y, loc.z, 1.0, 0, 0, 786603, 0xbf800000)
+			if not (QBCore.Functions.GetPlayerData().metadata["isdead"]) and not(QBCore.Functions.GetPlayerData().metadata["inlaststand"]) then
+				Active = false
+				ClearPedTasksImmediately(doctorPed)
+				RemovePedElegantly(doctorPed)
+				DeleteEntity(doctorVeh)
+				Wait(5000)
+				DeleteEntity(doctorPed)
+				canCall = true
+			else
+				local loc = GetEntityCoords(GetPlayerPed(-1))
+				local lc = GetEntityCoords(doctorVeh)
+				local ld = GetEntityCoords(doctorPed)
+				local distVeh = Vdist(loc.x, loc.y, loc.z, lc.x, lc.y, lc.z)
+				local distPed = Vdist(loc.x, loc.y, loc.z, ld.x, ld.y, ld.z)
+				if distVeh <= 10 then
+					if Active then
+						TaskGoToCoordAnyMeans(doctorPed, loc.x, loc.y, loc.z, 1.0, 0, 0, 786603, 0xbf800000)
+					end
+					if distPed <= 1 then 
+						Active = false
+						ClearPedTasksImmediately(doctorPed)
+						DoctorNPC()
+					end
 				end
-				if dist1 <= 1 then 
-					Active = false
-					ClearPedTasksImmediately(test1)
-					DoctorNPC()
-				end
-            end
+			end
         end
     end
 end)
@@ -101,23 +110,24 @@ function DoctorNPC()
 		Citizen.Wait(1000)
 	end
 
-	TaskPlayAnim(test1, "mini@cpr@char_a@cpr_str","cpr_pumpchest",1.0, 1.0, -1, 9, 1.0, 0, 0, 0)
+	TaskPlayAnim(doctorPed, "mini@cpr@char_a@cpr_str","cpr_pumpchest",1.0, 1.0, -1, 9, 1.0, 0, 0, 0)
 	QBCore.Functions.Progressbar("revive_doc", "The doctor is giving you medical aid", Config.ReviveTime, false, false, {
 		disableMovement = false,
 		disableCarMovement = false,
 		disableMouse = false,
 		disableCombat = true,
 	}, {}, {}, {}, function() -- Done
-		ClearPedTasks(test1)
+		ClearPedTasks(doctorPed)
 		Citizen.Wait(500)
-        	TriggerEvent("hospital:client:Revive")
-		StopScreenEffect('DeathFailOut')	
+		TriggerEvent("hospital:client:Revive")
+		StopScreenEffect('DeathFailOut')
+		TriggerServerEvent('hhfw:charge')
 		Notify("Your treatment is done, you were charged: "..Config.Price, "success")
-		RemovePedElegantly(test1)
-		DeleteEntity(test)
+		RemovePedElegantly(doctorPed)
+		DeleteEntity(doctorVeh)
 		Wait(5000)
-		DeleteEntity(test1)
-		spam = true
+		DeleteEntity(doctorPed)
+		canCall = true
 	end)
 end
 
