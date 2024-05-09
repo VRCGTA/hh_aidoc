@@ -35,5 +35,5 @@ AddEventHandler('hhfw:charge', function()
 	else
 		xPlayer.Functions.RemoveMoney("bank", Config.Price)
 	end
-	TriggerEvent("qb-bossmenu:server:addAccountMoney", 'ambulance', Config.Price)
+	exports['okokBanking']:AddMoney("ambulance", Config.Price)
 end)
