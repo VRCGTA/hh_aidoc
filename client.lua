@@ -74,7 +74,7 @@ Citizen.CreateThread(function()
     while true do
       Citizen.Wait(200)
         if Active then
-			if not (QBCore.Functions.GetPlayerData().metadata["isdead"]) and not(QBCore.Functions.GetPlayerData().metadata["inlaststand"]) then
+			if not (QBCore.Functions.GetPlayerData().condition.in_dead) and not(QBCore.Functions.GetPlayerData().condition.in_last_stand) then
 				Active = false
 				ClearPedTasksImmediately(doctorPed)
 				RemovePedElegantly(doctorPed)
