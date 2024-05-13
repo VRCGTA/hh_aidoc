@@ -9,7 +9,7 @@ local canCall = true
 
 
 RegisterCommand("help", function(source, args, raw)
-	if (QBCore.Functions.GetPlayerData().metadata["isdead"]) or (QBCore.Functions.GetPlayerData().metadata["inlaststand"]) and canCall then
+	if (QBCore.Functions.GetPlayerData().condition.in_dead) or (QBCore.Functions.GetPlayerData().in_last_stand) and canCall then
 		QBCore.Functions.TriggerCallback('hhfw:docOnline', function(EMSOnline, hasEnoughMoney)
 			if EMSOnline <= Config.Doctor and hasEnoughMoney and canCall then
 				SpawnVehicle(GetEntityCoords(PlayerPedId()))
